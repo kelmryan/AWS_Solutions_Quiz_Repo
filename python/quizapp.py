@@ -19,6 +19,7 @@ install_requirements()
 # Questions and answers
 def load_questions_from_readme(readme_path):
     questions = []
+    question_number = 0
     if os.path.exists(readme_path):
         with open(readme_path, "r") as file:
             lines = file.readlines()
@@ -29,17 +30,18 @@ def load_questions_from_readme(readme_path):
                 line = line.strip()
                 if line.startswith("###"):
                     if question:
-                        questions.append({"question": question, "options": options, "correct": correct})
+                        questions.append({"question": question, "options": options, "correct": correct, "question_number": question_number})
                     question = line[3:].strip()
                     options = []
                     correct = None
+                    question_number += 1
                 elif line.startswith("- [ ]"):
                     options.append(line[5:].strip())
                 elif line.startswith("- [x]"):
                     options.append(line[5:].strip())
                     correct = len(options) - 1
             if question:
-                questions.append({"question": question, "options": options, "correct": correct})
+                questions.append({"question": question, "options": options, "correct": correct, "question_number": question_number})
     return questions
 
 questions = load_questions_from_readme(readme_path)
@@ -51,6 +53,7 @@ class QuizApp:
         self.current_question = 0
         self.score_correct = 0
         self.score_incorrect = 0
+        self.randomize_question_order()
         self.create_widgets()
 
     def create_widgets(self):
@@ -68,26 +71,26 @@ class QuizApp:
 
         button_frame = tk.Frame(self.root)
         button_frame.grid(row=1+len(questions[self.current_question]["options"]), column=0, columnspan=2, pady=20)
-
+        # submit button
         self.submit_button = tk.Button(button_frame, text="Submit", command=self.check_answer)
         self.submit_button.grid(row=0, column=0, padx=10, pady=10)
-
+        # next button
         self.next_button = tk.Button(button_frame, text="Next", command=self.next_question)
         self.next_button.grid(row=0, column=2, padx=10, pady=10)
-
+        # sets the back button
         self.back_button = tk.Button(button_frame, text="Back", command=self.previous_question, state="disabled")
         self.back_button.grid(row=0, column=3, padx=10, pady=10)
-
+        # Create the initial frame
         score_frame = tk.Frame(self.root)
         score_frame.grid(row=2+len(questions[self.current_question]["options"]), column=0, columnspan=2, pady=20)
-
+        # Label how many correct in green
         self.correct_label = tk.Label(score_frame, text=f"Correct: {self.score_correct}", fg="green")
         self.correct_label.grid(row=0, column=0, padx=10)
 
         self.incorrect_label = tk.Label(score_frame, text=f"Incorrect: {self.score_incorrect}", fg="red")
         self.incorrect_label.grid(row=0, column=1, padx=10)
 
-        self.question_counter_label = tk.Label(score_frame, text=f"Question {self.current_question + 1} of {len(questions)}", fg="black")
+        self.question_counter_label = tk.Label(score_frame, text=f"Question {questions[self.current_question]['question_number']} of {len(questions)}", fg="black")
         self.question_counter_label.grid(row=0, column=2, padx=10)
 
     def next_question(self):
@@ -120,9 +123,10 @@ class QuizApp:
             btn.config(fg="black")
         self.submit_button.config(state="normal")
         self.next_button.config(state="disabled")
-    def randomize_question_order():
+
+    def randomize_question_order(self):
         random.shuffle(questions)
-    randomize_question_order()
+        self.current_question = 0
 
     def check_answer(self):
         selected = self.var.get()
@@ -137,13 +141,13 @@ class QuizApp:
             self.option_buttons[selected].config(fg="red")
             self.score_incorrect += 1
 
-        self.question_counter_label.config(text=f"Question {self.current_question + 1} of {len(questions)}")
+        self.question_counter_label.config(text=f"Question {questions[self.current_question]['question_number']} of {len(questions)}")
         self.correct_label.config(text=f"Correct: {self.score_correct}")
         self.incorrect_label.config(text=f"Incorrect: {self.score_incorrect}")
         self.next_button.config(state="normal")
 
     def update_question_counter(self):
-        self.question_counter_label.config(text=f"Question {self.current_question + 1} of {len(questions)}")
+        self.question_counter_label.config(text=f"Question {questions[self.current_question]['question_number']} of {len(questions)}")
         self.correct_label.config(text=f"Correct: {self.score_correct}")
         self.incorrect_label.config(text=f"Incorrect: {self.score_incorrect}")
 
@@ -155,4 +159,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = QuizApp(root)
     root.mainloop()
-    
